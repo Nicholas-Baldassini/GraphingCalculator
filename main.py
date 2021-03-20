@@ -1,21 +1,41 @@
+"""
+Graphing calculator application coded in python with pygame graphics.
+Capable of graphing explicit functions with zoom and screen shifting
+ability.
+
+Created by Nicholas Baldassini March 2021
+
+
+Directions
+========
+P : is to zoom in
+O : is to zoom out
+Arrow keys : to shift the graph in desired direction
+Enter desired equation in Equations text file
+
+"""
 import pygame
 import math
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
-pygame.init()  #Start Pygame
+pygame.init()
+
+# Constants
 size = 600
 width, height = (size, size)
 screen = pygame.display.set_mode((width, height))
 running = True
 black = (0, 0, 0)
 white = (255, 255, 255)
+gray = (120, 120, 120)
+shift_factor = 35  # How fast
 
 
 class Graph:
     """
     Class representing the graph object and holding data relevant
 
-    Used to manipulate data with respect to coordinates, independent of any
+    Used to manipulate data with respect to coordinates, independant of any
     graphic interface.
 
     Create list of points that should be on the graph and, plotted points and
@@ -27,12 +47,11 @@ class Graph:
     ymax: float
 
     # These two are enough to create a outline of our rectangular screen
-    bl_coord: Tuple[float, float]  # bottom left coordinate
-    tp_coord: Tuple[float, float]  # top left coord
     equation: str
-    dependent : List[Tuple[float, float]]  # List of all y values after graphing
-    precision : int # How many points on interval to be calculated
-    equation_list = List[str]
+    dependant: List[Tuple[float, float]]  # List of all y values after graphing
+    precision: int  # How many points on interval to be calculated
+    equation_list: List[str]
+    grid_lines: int  # Number of grid lines
 
     def __init__(self, xmin: float, xmax: float, ymin: float, ymax: float):
         self.xmin = xmin
@@ -44,6 +63,7 @@ class Graph:
         self.equation = ''
         self.precision = 100
         self.equation_list = []
+        self.grid_lines = 2
 
     def input_equation(self, eq: str) -> None:
         """
@@ -53,7 +73,7 @@ class Graph:
             raise Exception('Minimum > Maximum')
 
         increment = (self.xmax - self.xmin) / self.precision
-        self.dependent = []
+        self.dependant = []
 
         x = self.xmin
         while x <= self.xmax:
@@ -69,10 +89,9 @@ class Graph:
                 print(f'math domain error, {eq}: x = {x}')
                 x += increment
             else:
-                self.dependent.append((x, y))
+                self.dependant.append((x, y))
                 x += increment
         self.equation = eq
-        # print(self.dependent)
 
     def read_equations(self) -> None:
         """
@@ -115,7 +134,7 @@ def convert_xy_to_pygame(G: 'Graph') -> List[Tuple[float, float]]:
     x_width = G.xmax - G.xmin
     y_width = G.ymax - G.ymin
 
-    for i in G.dependent:
+    for i in G.dependant:
         if G. ymin < i[1] < G.ymax:
             relative_x = abs((i[0] - G.xmin) / x_width)
             relative_y = abs((i[1] - G.ymin) / y_width)
@@ -130,7 +149,35 @@ def draw_grid(G: 'Graph') -> None:
     """
     Draw the base x and y axis lines if the current view holds such coordinates,
     """
-    pass
+    xgrid_precision = 10
+    ygrid_precision = 15
+    rounding = 3
+    for i in range(G.grid_lines):
+        pygame.draw.line(screen, black, (0, i * height//G.grid_lines),
+                         (width, i * height//G.grid_lines), 1)
+        pygame.draw.line(screen, black, (i * width//G.grid_lines, 0),
+                         (i * width//G.grid_lines, height), 1)
+
+
+    for i in range(xgrid_precision):
+        x = G.dependant[int(i*len(G.dependant)/xgrid_precision)][0]
+        x = grid_coord(str(round(x, rounding)))
+        x_rec = x.get_rect()
+        x_rec.center = (i*width/xgrid_precision, height//2 + 10)
+        screen.blit(x, x_rec)
+        pygame.draw.line(screen, gray, (i*width/xgrid_precision, 0),
+                         (i*width/xgrid_precision, height), 1)
+
+    for i in range(ygrid_precision, 0, -1):
+        y = i*(G.ymin - G.ymax)/ygrid_precision + G.ymax
+        y = grid_coord(str(round(y, rounding)))
+        y_rec = y.get_rect()
+        y_rec.center = (width//2 + 8, i*height/ygrid_precision)
+        screen.blit(y, y_rec)
+        pygame.draw.line(screen, gray, (0, i*width/ygrid_precision),
+                         (width, i*width/ygrid_precision), 1)
+
+
 
 
 def draw_graph(G: 'Graph') -> None:
@@ -139,52 +186,76 @@ def draw_graph(G: 'Graph') -> None:
     """
     py_coord = convert_xy_to_pygame(G)
     for i in py_coord:
-        pygame.draw.circle(screen, white, (i[0], i[1]), 1)
+        pygame.draw.circle(screen, black, (i[0], i[1]), 1)
 
 
 def update_screen(G: 'Graph') -> None:
     """
     Update all pygame screen stuff, colour and update and such
     """
-    screen.fill(black)
+    screen.fill(white)
     draw_graph(g)
     screen.blit(pygame.transform.flip(screen, False, True), (0, 0))
+    draw_grid(G)
     pygame.display.update()
     pygame.time.delay(10)
 
-g = Graph(-20, 20, -10, 10)
-g.change_precision(5000)
-g.input_equation('math.cos(math.tan(x))')
+def grid_coord(num: str) -> 'pygame.font':
+    text = font.render(num, False, gray)
+    return text
+
+
+font = pygame.font.Font('freesansbold.ttf', 14)
+g = Graph(-2, 2, -2, 2)
+g.change_precision(10000) # 20000 is about the limit, anything bigger = slow
+g.input_equation('math.cos(x)')
 g.read_equations()
+update_screen(g)
 while running:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:  # The user closed the window!
-            running = False  # Stop running
+        if event.type == pygame.QUIT:
+            running = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                g.change_dimensions(g.xmin + 1, g.xmax + 1, g.ymin, g.ymax)
-                update_screen(g)
-            elif event.key == pygame.K_RIGHT:
-                g.change_dimensions(g.xmin - 1, g.xmax - 1, g.ymin, g.ymax)
-                update_screen(g)
-            elif event.key == pygame.K_UP:
-                g.change_dimensions(g.xmin, g.xmax, g.ymin - 1, g.ymax - 1)
-                update_screen(g)
+            # shift graph 50th of the screen over
+            xshift_factor = (g.xmax - g.xmin)/shift_factor
+            yshift_factor = (g.ymax - g.ymin)/shift_factor
+            if event.key == pygame.K_RIGHT:
+                g.change_dimensions(g.xmin - xshift_factor,
+                                    g.xmax - xshift_factor, g.ymin, g.ymax)
+            elif event.key == pygame.K_LEFT:
+                g.change_dimensions(g.xmin + xshift_factor,
+                                    g.xmax + xshift_factor, g.ymin, g.ymax)
             elif event.key == pygame.K_DOWN:
-                g.change_dimensions(g.xmin, g.xmax, g.ymin + 1, g.ymax + 1)
-                update_screen(g)
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # screen.fill(black)
-            # draw_graph(g)
-            # screen.blit(pygame.transform.flip(screen, False, True), (0, 0))
-            # pygame.display.update()
+                g.change_dimensions(g.xmin, g.xmax, g.ymin + yshift_factor,
+                                    g.ymax + yshift_factor)
+            elif event.key == pygame.K_UP:
+                g.change_dimensions(g.xmin, g.xmax, g.ymin - yshift_factor,
+                                    g.ymax - yshift_factor)
+            elif event.key == pygame.K_p:
+                xzoom_factor = (g.xmax - g.xmin)/10
+                yzoom_factor = (g.ymax - g.ymin)/10
+                g.change_dimensions(g.xmin + xzoom_factor,
+                                    g.xmax - xzoom_factor,
+                                    g.ymin + yzoom_factor,
+                                    g.ymax - yzoom_factor)
+            elif event.key == pygame.K_o:
+                xzoom_factor = (g.xmax - g.xmin)/10
+                yzoom_factor = (g.ymax - g.ymin)/10
+                g.change_dimensions(g.xmin - xzoom_factor,
+                                    g.xmax + xzoom_factor,
+                                    g.ymin - yzoom_factor,
+                                    g.ymax + yzoom_factor)
+
             update_screen(g)
+
+
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pass
 
     pygame.time.delay(10)
 pygame.quit()
 
 
-# if __name__ == '__main__':
-#     g = Graph(0, 100, 500, 500)
-#     g.change_precision(100)
-#     g.input_equation('x**2')
+if __name__ == '__main__':
+    pass

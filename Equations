@@ -1,9 +1,13 @@
 Documentation
-1,2,2,23
-312312
-4123
-21443
-21
+This is the document to display any equations to be inputted into the system
+
+Must use correct python syntax
+
+To use powers, use ** notation, 2 to the power of two would be 2**2,
+3 to the power of sin(x) is 3**math.sin(x)...
+
+When using functions/constants such as cos(x), sin(x), tan(x), e, pi use the
+math. prefix notation before hand, lastly always graph with respect to x.
 END OF DOCUMENTATION
 math.cos(x)
 math.sin(x)
