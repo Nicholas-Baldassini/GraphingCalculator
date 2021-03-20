@@ -14,3 +14,6 @@ math.sin(x)
 math.e**x
 1/x
 x**2
+math.cos(math.tan(x))
+math.cos(math.e**x)
+math.sqrt(1/(math.tan(math.sin(x))**math.atan(x)))
