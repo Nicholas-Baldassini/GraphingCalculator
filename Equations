@@ -1,19 +1,22 @@
 Documentation
-This is the document to display any equations to be inputted into the system
+This file stores the explicit equations used in main.py
 
-Must use correct python syntax
+Input equations below the END OF DOCUMENTATION line
 
-To use powers, use ** notation, 2 to the power of two would be 2**2,
-3 to the power of sin(x) is 3**math.sin(x)...
+Must use correct python syntax when inputting equations
+
+To use powers, use ** syntax, 2 to the power of two would be 2**2,
+3 to the power of sin(x) is 3**math.sin(x)... do not use ^ syntax
 
 When using functions/constants such as cos(x), sin(x), tan(x), e, pi use the
 math. prefix notation before hand, lastly always graph with respect to x.
+
+Default equations are provided, can add up to a total of ten equations.
 END OF DOCUMENTATION
-math.cos(x)
 math.sin(x)
+math.sin(math.pi/x)
 math.e**x
 1/x
 x**2
-math.cos(math.tan(x))
+math.sin(1/x)*(x**2)
 math.cos(math.e**x)
-math.sqrt(1/(math.tan(math.sin(x))**math.atan(x)))

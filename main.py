@@ -16,7 +16,7 @@ B : change to standard view
 
 Arrow keys : to shift the graph in desired direction
 
-1-10 keys : choose what equation to display to screen, in order from equations
+0-9 keys : choose what equation to display to screen, in order from equations
 file
 
 -, + keys : decrease/increase precision of calculations, makes graph more
@@ -27,39 +27,41 @@ Enter desired equation in Equations text file
 import pygame
 import math
 from typing import List, Tuple, Dict
+import timeit as timeit
 
 pygame.init()
 
 # Constants
-size = 600
+size = 800
 width, height = (size, size)
 screen = pygame.display.set_mode((width, height))
 black = (0, 0, 0)
 white = (255, 255, 255)
 gray = (120, 120, 120)
-shift_factor = 35  # How fast
+shift_factor = 20  # How fast
+font = pygame.font.Font('freesansbold.ttf', 14)
 
 
 class Graph:
     """
     Class representing the graph object and holding data relevant
 
-    Used to manipulate data with respect to coordinates, independant of any
+    Used to manipulate data with respect to coordinates, independent of any
     graphic interface.
 
     Create list of points that should be on the graph and, plotted points and
-    such
+    such.
     """
+    # Graph dimensions
     xmin: float
     xmax: float
     ymin: float
     ymax: float
 
-    # These two are enough to create a outline of our rectangular screen
     equation: str
-    dependant: List[Tuple[float, float]]  # List of all y values after graphing
-    precision: int  # How many points on interval to be calculated
     equation_list: List[str]
+    dependant: List[Tuple[float, float]]  # Dependant variables
+    precision: int  # How many points on interval to be calculated
     grid_lines: int  # Number of grid lines
 
     def __init__(self, xmin: float, xmax: float, ymin: float, ymax: float):
@@ -89,17 +91,16 @@ class Graph:
             try:
                 y = eval(eq)
             except ZeroDivisionError:
-                print(f'division by zero, x = {x}')
+                print(f'Division by zero, x = {x}')
                 x += increment
             except SyntaxError:
                 print(f'Invalid equation: {eq}')
-                print(type(eq), len(eq))
                 x += increment
             except ValueError:
-                print(f'math domain error, {eq}: x = {x}')
+                print(f'Math domain error, {eq}: x = {x}')
                 x += increment
             except TypeError:
-                print('can\'t convert complex to float')
+                print('Can\'t convert complex to float')
                 x += increment
             else:
                 self.dependant.append((x, y))
@@ -108,7 +109,7 @@ class Graph:
 
     def read_equations(self) -> None:
         """
-        Open equations.txt and read and record the equations
+        Open Equations file and read and record the equations
         """
         eq_file = open('Equations', 'r')
         line = eq_file.readline()
@@ -131,10 +132,10 @@ class Graph:
         self.ymax = ymax
         self.input_equation(self.equation)
 
-
     def change_precision(self, precision):
         """
-        Change precision of the graph, less dots will be graphed the lower
+        Change precision of the graph, less dots will be graphed, program will
+        run faster but lines will be poorly drawn
         """
         if precision <= 0:
             print("Precision must be positive")
@@ -146,7 +147,8 @@ class Graph:
 
 def convert_xy_to_pygame(G: 'Graph') -> List[Tuple[float, float]]:
     """
-    Convert the coordinates in the graph to pygame coordinates
+    Convert the coordinates in the graph to pygame coordinates, graphical
+    interface function
     """
     py_coords = []
     x_width = G.xmax - G.xmin
@@ -156,8 +158,8 @@ def convert_xy_to_pygame(G: 'Graph') -> List[Tuple[float, float]]:
         if G. ymin < i[1] < G.ymax:
             relative_x = abs((i[0] - G.xmin) / x_width)
             relative_y = abs((i[1] - G.ymin) / y_width)
-            pygame_x = (int(relative_x * width))
-            pygame_y = (int(relative_y * height))
+            pygame_x = (round(relative_x * width))
+            pygame_y = (round(relative_y * height))
             if 0 < pygame_y < height and 0 < pygame_x < width:
                 py_coords.append((pygame_x, pygame_y))
     return py_coords
@@ -165,9 +167,9 @@ def convert_xy_to_pygame(G: 'Graph') -> List[Tuple[float, float]]:
 
 def draw_grid(G: 'Graph') -> None:
     """
-    Draw the base x and y axis lines if the current view holds such coordinates,
+    Draw the base x and y axis lines
     """
-    xgrid_precision = 10
+    xgrid_precision = 5
     ygrid_precision = 12
     rounding = 3
     for i in range(G.grid_lines):
@@ -177,7 +179,7 @@ def draw_grid(G: 'Graph') -> None:
                          (i * width//G.grid_lines, height), 1)
 
     for i in range(xgrid_precision):
-        x = G.dependant[int(i*len(G.dependant)/xgrid_precision)][0]
+        x = G.dependant[round(i*len(G.dependant)/xgrid_precision)][0]
         x = grid_coord(str(round(x, rounding)))
         x_rec = x.get_rect()
         x_rec.center = (i*width/xgrid_precision, height//2 + 10)
@@ -197,7 +199,7 @@ def draw_grid(G: 'Graph') -> None:
 
 def draw_graph(G: 'Graph') -> None:
     """
-     Strictly a pygame function, used to graph the pygame lines and points
+     Draw the coordinates from Graph object into pygame window
     """
     py_coord = convert_xy_to_pygame(G)
     for i in py_coord:
@@ -206,17 +208,20 @@ def draw_graph(G: 'Graph') -> None:
 
 def update_screen(G: 'Graph') -> None:
     """
-    Update all pygame screen stuff, colour and update and such
+    Update pygame screen
     """
     screen.fill(white)
     draw_graph(G)
     screen.blit(pygame.transform.flip(screen, False, True), (0, 0))
     draw_grid(G)
     pygame.display.update()
-    pygame.time.delay(10)
+    pygame.time.delay(3)
 
 
 def grid_coord(num: str) -> 'pygame.font':
+    """
+    Grid number labels font initializer
+    """
     text = font.render(num, False, gray)
     return text
 
@@ -224,21 +229,21 @@ def grid_coord(num: str) -> 'pygame.font':
 def init_program(precision=10000) -> None:
     """
     Main function to kick start program, includes main pygame while loop
+
+    precision=20000 is about the limit, anything bigger and program is very slow
     """
-    global font
-    font = pygame.font.Font('freesansbold.ttf', 14)
 
     g = Graph(-10, 10, -10, 10)
-    # 20000 is about the limit, anything bigger = slow
     g.input_equation('x**2')
     g.change_precision(precision)
     g.read_equations()
     update_screen(g)
-    running = True
-    while running:
+
+    # Infinite pygame loop
+    while 1:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
             if event.type == pygame.KEYDOWN:
                 # shift graph 50th of the screen over
                 xshift_factor = (g.xmax - g.xmin)/shift_factor
@@ -277,18 +282,15 @@ def init_program(precision=10000) -> None:
                     g.change_precision(g.precision + 400)
                 elif event.key == pygame.K_MINUS:
                     g.change_precision(g.precision - 400)
-
-                for num in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']:
-                    if event.key == eval(f'pygame.K_{num}'):
-                        try:
-                            g.input_equation(g.equation_list[int(num)])
-                        except IndexError:
-                            print(f'no equation in slot {num}')
-
+                else:
+                    for num in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']:
+                        if event.key == eval(f'pygame.K_{num}'):
+                            try:
+                                g.input_equation(g.equation_list[int(num)])
+                            except IndexError:
+                                print(f'no equation in slot {num}')
                 update_screen(g)
-
-        pygame.time.delay(10)
-    pygame.quit()
+        pygame.time.delay(1)
 
 
 if __name__ == '__main__':
